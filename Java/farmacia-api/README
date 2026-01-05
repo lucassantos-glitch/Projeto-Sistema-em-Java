@@ -1,0 +1,187 @@
+
+# Farmácia API
+
+## Descrição
+
+API REST para gerenciamento de uma farmácia, permitindo cadastro de medicamentos, categorias, clientes, vendas, movimentação de estoque e alertas de validade/estoque.
+
+## Tecnologias Utilizadas
+
+- **Java 17**
+- **Spring Boot 3.5.9**
+- **Spring Data JPA**
+- **Spring Security 6.5.7** com autenticação JWT
+- **PostgreSQL 18.1** (banco de dados)
+- **Springdoc OpenAPI 2.8.0 (Swagger)**
+- **JJWT 0.12.3** (JSON Web Token)
+- **Lombok**
+- **HikariCP** (connection pool)
+
+## Como Executar o Projeto
+
+1. **Clone o repositório:**
+   ```sh
+   git clone <url-do-repositorio>
+   ```
+
+2. **Configure o banco de dados PostgreSQL:**
+   - Crie o banco de dados e conceda permissões:
+     ```sql
+     CREATE DATABASE farmacia;
+     GRANT ALL PRIVILEGES ON DATABASE farmacia TO postgres;
+     ```
+   - Certifique-se de que o usuário `postgres` existe e a senha está correta no arquivo `application.properties`.
+   - Exemplo de configuração (`src/main/resources/application.properties`):
+     ```properties
+     spring.datasource.url=jdbc:postgresql://localhost:5432/farmacia
+     spring.datasource.username=postgres
+     spring.datasource.password=Iphone1998
+     spring.datasource.driver-class-name=org.postgresql.Driver
+     spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+     spring.jpa.hibernate.ddl-auto=update
+     spring.jpa.show-sql=true
+     springdoc.swagger-ui.path=/swagger-ui.html
+     ```
+
+3. **Execute a aplicação:**
+   - No Linux/macOS:
+     ```sh
+     ./mvnw spring-boot:run
+     ```
+   - No Windows:
+     ```sh
+     mvnw spring-boot:run
+     ```
+
+4. **Acesse a documentação Swagger:**
+   - [http://localhost:8080/swagger-ui.html]
+
+5. **As tabelas serão criadas automaticamente** no banco PostgreSQL ao iniciar a aplicação.
+
+## Autenticação JWT
+
+A API utiliza **autenticação JWT (JSON Web Token)** para proteger os endpoints.
+
+### Como Autenticar
+
+1. **Faça login para obter o token:**
+   ```http
+   POST /auth/login
+   Content-Type: application/json
+
+   {
+     "username": "admin",
+     "password": "admin"
+   }
+   ```
+
+2. **Resposta com o token:**
+   ```json
+   {
+     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+     "type": "Bearer"
+   }
+   ```
+
+3. **Use o token nas requisições:**
+   - No Swagger UI: Clique no botão **Authorize** 🔒 e cole o token
+   - Em requisições HTTP: Adicione o header `Authorization: Bearer SEU_TOKEN`
+
+### Configurações do Token
+
+- **Validade:** 10 horas
+- **Algoritmo:** HMAC SHA256
+- **Armazenamento:** O Swagger UI salva automaticamente no localStorage do navegador
+
+### Usuário Padrão
+
+- **Usuário:** `admin`
+- **Senha:** `admin`
+
+> **Nota:** O token é zerado automaticamente ao recarregar a página do Swagger.
+
+## Validações de Campos
+
+A API possui validações com mensagens personalizadas:
+
+### Medicamento
+- **Nome:** Obrigatório e único
+- **Preço:** Deve ser maior que zero
+
+### Cliente
+- **E-mail:** Obrigatório e válido
+- **CPF:** Obrigatório e único
+
+## Exemplos de Endpoints
+
+### Autenticação
+- Login: `POST /auth/login`
+
+### Categorias
+- Listar categorias: `GET /categorias`
+- Criar categoria: `POST /categorias`
+- Buscar categoria por ID: `GET /categorias/{id}`
+
+### Medicamentos
+- Listar medicamentos: `GET /medicamentos`
+- Cadastrar medicamento: `POST /medicamentos`
+- Buscar medicamento por ID: `GET /medicamentos/{id}`
+- Atualizar medicamento: `PUT /medicamentos/{id}`
+- Deletar medicamento: `DELETE /medicamentos/{id}`
+- Alterar status: `PATCH /medicamentos/{id}/status`
+
+### Clientes
+- Listar clientes: `GET /clientes`
+- Cadastrar cliente: `POST /clientes`
+- Buscar cliente por ID: `GET /clientes/{id}`
+- Atualizar cliente: `PUT /clientes/{id}`
+- Deletar cliente: `DELETE /clientes/{id}`
+
+### Vendas
+- Registrar venda: `POST /vendas`
+- Listar vendas: `GET /vendas`
+- Buscar venda por ID: `GET /vendas/{id}`
+- Listar vendas por cliente: `GET /vendas/cliente/{clienteId}`
+
+### Alertas
+- Listar medicamentos com estoque baixo: `GET /alertas/estoque-baixo`
+- Listar medicamentos com validade próxima: `GET /alertas/validade-proxima`
+
+### Estoque
+- Adicionar ao estoque: `POST /estoque/adicionar`
+- Remover do estoque: `POST /estoque/remover`
+- Histórico de movimentações: `GET /estoque/historico/{medicamentoId}`
+
+> **Importante:** Todos os endpoints (exceto `/auth/login`) exigem autenticação JWT via Bearer Token.
+
+## Observações
+
+- O banco de dados utilizado é o **PostgreSQL 18.1**
+- O projeto utiliza **Lombok**. Certifique-se de instalar o plugin do Lombok em sua IDE
+- A autenticação JWT substitui o HTTP Basic Auth para maior segurança
+- Tokens JWT expiram após 10 horas de inatividade
+- O Swagger UI customizado gerencia automaticamente o armazenamento do token
+- Para rodar os testes automatizados, utilize:
+  ```sh
+  ./mvnw test
+  ```
+
+## Estrutura do Projeto
+
+```
+farmacia-api/
+├── src/main/java/com/farmacia/
+│   ├── config/          # Configurações (Swagger, Estoque)
+│   ├── controller/      # Controllers REST
+│   ├── dto/             # Data Transfer Objects
+│   ├── exception/       # Tratamento de exceções
+│   ├── model/           # Entidades JPA
+│   ├── repository/      # Repositórios JPA
+│   ├── security/        # Configurações de segurança (JWT, SecurityConfig)
+│   ├── service/         # Lógica de negócio
+│   └── validation/      # Validações customizadas
+└── src/main/resources/
+    ├── application.properties
+    └── static/
+        └── swagger-ui.html  # Swagger UI customizado
+```

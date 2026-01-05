@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmácia API - Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="./swagger-ui.css" />
+    <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    
+    <script src="./swagger-ui-bundle.js"></script>
+    <script src="./swagger-ui-standalone-preset.js"></script>
+    <script>
+        // Limpar localStorage ao recarregar a página
+        window.addEventListener('beforeunload', function() {
+            localStorage.removeItem('jwt_token');
+        });
+        
+        // Também limpar ao carregar a página
+        localStorage.removeItem('jwt_token');
+        
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: "/v3/api-docs",
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                requestInterceptor: (request) => {
+                    // Adicionar token JWT do localStorage em todas as requisições
+                    const token = localStorage.getItem('jwt_token');
+                    if (token) {
+                        request.headers['Authorization'] = 'Bearer ' + token;
+                    }
+                    return request;
+                },
+                responseInterceptor: (response) => {
+                    // Se a resposta for do endpoint de login, salvar o token
+                    if (response.url.includes('/auth/login') && response.status === 200) {
+                        try {
+                            const data = JSON.parse(response.text);
+                            if (data.token) {
+                                localStorage.setItem('jwt_token', data.token);
+                                console.log('Token JWT salvo no localStorage');
+                                // Atualizar a interface do Swagger
+                                setTimeout(() => {
+                                    window.ui.preauthorizeApiKey('bearerAuth', 'Bearer ' + data.token);
+                                }, 100);
+                            }
+                        } catch (e) {
+                            console.error('Erro ao processar resposta de login:', e);
+                        }
+                    }
+                    return response;
+                },
+                onComplete: () => {
+                    // Verificar se há token salvo ao carregar
+                    const savedToken = localStorage.getItem('jwt_token');
+                    if (savedToken) {
+                        window.ui.preauthorizeApiKey('bearerAuth', 'Bearer ' + savedToken);
+                    }
+                }
+            });
+            
+            window.ui = ui;
+        };
+    </script>
+</body>
+</html>
