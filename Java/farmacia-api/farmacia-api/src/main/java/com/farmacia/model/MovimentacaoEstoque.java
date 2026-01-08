@@ -16,13 +16,23 @@ public class MovimentacaoEstoque {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss", timezone = "America/Sao_Paulo")
+    @Column(nullable = false)
     private LocalDateTime data;
 
     private String tipo; // ENTRADA ou SAIDA
 
     private Integer quantidade;
 
+    private Integer estoqueAtual; // Estoque do medicamento após esta movimentação
+
     @ManyToOne
     private Medicamento medicamento;
+
+    @PrePersist
+    private void preencherDataSeVazia() {
+        if (this.data == null) {
+            this.data = LocalDateTime.now();
+        }
+    }
 }

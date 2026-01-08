@@ -3,6 +3,7 @@ package com.farmacia.controller;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import com.farmacia.model.Medicamento;
 import com.farmacia.repository.MedicamentoRepository;
 import com.farmacia.service.MedicamentoService;
@@ -49,8 +50,9 @@ public class MedicamentoController {
 
     @Operation(summary = "Deletar medicamento", description = "Remove um medicamento do sistema pelo ID.")
     @DeleteMapping("/{id}")
-    public void deletar(@PathVariable @NonNull Long id) {
+    public ResponseEntity<Void> deletar(@PathVariable @NonNull Long id) {
         medicamentoService.deletar(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Alterar status do medicamento", description = "Ativa ou inativa um medicamento pelo ID.")

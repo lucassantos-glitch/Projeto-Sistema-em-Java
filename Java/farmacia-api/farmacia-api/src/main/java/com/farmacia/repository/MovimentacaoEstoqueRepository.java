@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MovimentacaoEstoqueRepository extends JpaRepository<MovimentacaoEstoque, Long> {
-    // Métodos customizados (se necessário)
+    java.util.List<MovimentacaoEstoque> findByMedicamentoIdOrderByDataDesc(Long medicamentoId);
 }

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.farmacia.config.LocalDateFlexDeserializer;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,7 +34,8 @@ public class Medicamento {
     private Integer quantidade;
 
     @Future
-    @JsonFormat(pattern = "dd/MM/yyyy")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonDeserialize(using = LocalDateFlexDeserializer.class)
     private LocalDate validade;
 
     private Boolean ativo = true;

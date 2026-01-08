@@ -41,19 +41,53 @@ public class MedicamentoService {
         return repository.save(med);
     }
 
+    @SuppressWarnings("null")
     public Medicamento atualizar(@org.springframework.lang.NonNull Long id, Medicamento med) {
         Medicamento existente = repository.findById(id)
             .orElseThrow(() -> new RegraNegocioException("Medicamento não encontrado"));
-        // Atualize apenas os campos permitidos
-        existente.setNome(med.getNome());
-        existente.setPreco(med.getPreco());
-        if (med.getQuantidade() == null || med.getQuantidade() <= 0) {
-            throw new RegraNegocioException("Quantidade em estoque deve ser maior que zero");
+
+        // Nome: obrigatório e único (ignora se não enviado)
+        if (med.getNome() != null && !med.getNome().trim().isEmpty()) {
+            if (!med.getNome().equalsIgnoreCase(existente.getNome()) && repository.existsByNome(med.getNome())) {
+                throw new RegraNegocioException("Nome é obrigatório e único");
+            }
+            existente.setNome(med.getNome().trim());
         }
-        existente.setQuantidade(med.getQuantidade());
-        existente.setValidade(med.getValidade());
-        existente.setAtivo(med.getAtivo());
-        existente.setCategoria(med.getCategoria());
+
+        // Preço: > 0 (ignora se não enviado)
+        if (med.getPreco() != null) {
+            if (med.getPreco().doubleValue() <= 0) {
+                throw new RegraNegocioException("Preço deve ser maior que zero");
+            }
+            existente.setPreco(med.getPreco());
+        }
+
+        // Quantidade: >= 0 (ignora se não enviado)
+        if (med.getQuantidade() != null) {
+            if (med.getQuantidade() < 0) {
+                throw new RegraNegocioException("Quantidade em estoque deve ser maior ou igual a zero");
+            }
+            existente.setQuantidade(med.getQuantidade());
+        }
+
+        // Validade: deve ser futura (ignora se não enviado)
+        if (med.getValidade() != null) {
+            if (!med.getValidade().isAfter(LocalDate.now())) {
+                throw new RegraNegocioException("Data de validade deve ser futura");
+            }
+            existente.setValidade(med.getValidade());
+        }
+
+        // Status ativo (ignora se não enviado)
+        if (med.getAtivo() != null) {
+            existente.setAtivo(med.getAtivo());
+        }
+
+        // Categoria (ignora se não enviada)
+        if (med.getCategoria() != null && med.getCategoria().getId() != null) {
+            existente.setCategoria(med.getCategoria());
+        }
+
         return repository.save(existente);
     }
 
@@ -77,7 +111,7 @@ public class MedicamentoService {
             // Soft delete: inativa em vez de excluir fisicamente
             med.setAtivo(false);
             repository.save(med);
-            throw new RegraNegocioException("Medicamento já foi vendido. Exclusão física não permitida. Medicamento inativado.");
+            // Não lança exceção - o soft delete é uma operação válida
         } else {
             // Exclusão física se nunca foi vendido
             repository.delete(med);

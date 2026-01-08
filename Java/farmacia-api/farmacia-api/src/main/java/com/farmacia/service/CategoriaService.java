@@ -48,4 +48,26 @@ public class CategoriaService {
         return repository.findById(id)
             .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
     }
+
+    public Categoria atualizar(Long id, Categoria categoria) {
+        if (id == null) {
+            throw new IllegalArgumentException("O id não pode ser nulo");
+        }
+        Categoria existente = repository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+        
+        // Valida nome se foi enviado
+        if (categoria.getNome() != null && !categoria.getNome().trim().isEmpty()) {
+            // Verifica se o nome já existe em outra categoria
+            if (!categoria.getNome().equalsIgnoreCase(existente.getNome()) && repository.existsByNome(categoria.getNome())) {
+                throw new RuntimeException("Nome da categoria já existe");
+            }
+            existente.setNome(categoria.getNome().trim());
+        }
+        
+        if (existente == null) {
+            throw new RuntimeException("Categoria não pode ser nula");
+        }
+        return repository.save(existente);
+    }
 }

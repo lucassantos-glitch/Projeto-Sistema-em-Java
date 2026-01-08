@@ -3,12 +3,14 @@ package com.farmacia.service;
 import com.farmacia.model.Venda;
 import com.farmacia.model.ItemVenda;
 import com.farmacia.model.Medicamento;
+import com.farmacia.model.MovimentacaoEstoque;
 import com.farmacia.repository.VendaRepository;
 
 // Adicione o import para RegraNegocioException se ela existir em outro pacote
 import com.farmacia.exception.RegraNegocioException;
 
 import com.farmacia.repository.MedicamentoRepository;
+import com.farmacia.repository.MovimentacaoEstoqueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,13 @@ import java.util.List;
 public class VendaService {
     public List<Venda> listar() {
         return vendaRepository.findAll();
+    }
+
+    public Venda salvar(Venda venda) {
+        if (venda == null) {
+            throw new IllegalArgumentException("A venda não pode ser nula");
+        }
+        return vendaRepository.save(venda);
     }
 
     public void deletar(Long id) {
@@ -62,8 +71,18 @@ public class VendaService {
             item.setPrecoUnitario(med.getPreco());
             total = total.add(med.getPreco().multiply(BigDecimal.valueOf(item.getQuantidade())));
 
+            // Atualiza estoque do medicamento
             med.setQuantidade(med.getQuantidade() - item.getQuantidade());
             medicamentoRepository.save(med);
+
+            // Registra movimentação de estoque (SAÍDA por venda)
+            MovimentacaoEstoque movimentacao = new MovimentacaoEstoque();
+            movimentacao.setMedicamento(med);
+            movimentacao.setTipo("SAIDA");
+            movimentacao.setQuantidade(item.getQuantidade());
+            movimentacao.setData(LocalDateTime.now());
+            movimentacao.setEstoqueAtual(med.getQuantidade());
+            movimentacaoEstoqueRepository.save(movimentacao);
         }
 
         venda.setTotal(total);
@@ -75,4 +94,7 @@ public class VendaService {
 
     @Autowired
     private MedicamentoRepository medicamentoRepository;
+
+    @Autowired
+    private MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
 }

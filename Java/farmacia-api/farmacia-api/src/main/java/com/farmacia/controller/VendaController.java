@@ -89,7 +89,15 @@ public class VendaController {
     @Operation(summary = "Listar vendas", description = "Retorna todas as vendas registradas.")
     @GetMapping
     public List<Venda> listar() {
-        return vendaService.listar();
+        List<Venda> vendas = vendaService.listar();
+        // Backfill: preencher datas nulas com a data atual e salvar
+        vendas.stream()
+            .filter(v -> v.getData() == null)
+            .forEach(v -> {
+                v.setData(java.time.LocalDateTime.now());
+                vendaService.salvar(v);
+            });
+        return vendas;
     }
 
 

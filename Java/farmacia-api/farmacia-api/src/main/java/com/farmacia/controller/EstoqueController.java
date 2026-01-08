@@ -53,9 +53,10 @@ public class EstoqueController {
             // Regra: Entrada aumenta o estoque
             medicamento.setQuantidade(medicamento.getQuantidade() + movimentacao.getQuantidade());
             medicamentoRepository.save(medicamento);
-            // Registrar movimentação com data, tipo e quantidade
+            // Registrar movimentação com data, tipo, quantidade e estoque atual
             movimentacao.setTipo("ENTRADA");
             movimentacao.setData(java.time.LocalDateTime.now());
+            movimentacao.setEstoqueAtual(medicamento.getQuantidade());
             movimentacaoEstoqueRepository.save(movimentacao);
             return ResponseEntity.ok(medicamento);
         } catch (Exception e) {
@@ -101,9 +102,10 @@ public class EstoqueController {
             // Regra: Saída diminui o estoque
             medicamento.setQuantidade(medicamento.getQuantidade() - movimentacao.getQuantidade());
             medicamentoRepository.save(medicamento);
-            // Registrar movimentação com data, tipo e quantidade
+            // Registrar movimentação com data, tipo, quantidade e estoque atual
             movimentacao.setTipo("SAIDA");
             movimentacao.setData(java.time.LocalDateTime.now());
+            movimentacao.setEstoqueAtual(medicamento.getQuantidade());
             movimentacaoEstoqueRepository.save(movimentacao);
             return ResponseEntity.ok(medicamento);
         } catch (Exception e) {
@@ -127,5 +129,38 @@ public class EstoqueController {
         }
         Medicamento medicamento = optMed.get();
         return ResponseEntity.ok(medicamento.getQuantidade());
+    }
+
+    @Operation(summary = "Histórico de movimentações", description = "Lista movimentações de estoque por medicamento (mais recentes primeiro).")
+    @GetMapping("/historico/{medicamentoId}")
+    public ResponseEntity<?> historico(@PathVariable Long medicamentoId) {
+        if (medicamentoId == null) {
+            return ResponseEntity.badRequest().body("O ID do medicamento não pode ser nulo.");
+        }
+        Optional<Medicamento> optMed = medicamentoRepository.findById(medicamentoId);
+        if (optMed.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Medicamento medicamento = optMed.get();
+        var lista = movimentacaoEstoqueRepository.findByMedicamentoIdOrderByDataDesc(medicamentoId);
+        
+        // Backfill: corrige registros antigos sem data ou estoqueAtual
+        boolean precisaSalvar = false;
+        for (var mov : lista) {
+            if (mov.getData() == null) {
+                mov.setData(java.time.LocalDateTime.now());
+                precisaSalvar = true;
+            }
+            if (mov.getEstoqueAtual() == null) {
+                // Define estoque atual como o estoque atual do medicamento para registros antigos
+                mov.setEstoqueAtual(medicamento.getQuantidade());
+                precisaSalvar = true;
+            }
+        }
+        if (precisaSalvar && lista != null) {
+            movimentacaoEstoqueRepository.saveAll(lista);
+            lista = movimentacaoEstoqueRepository.findByMedicamentoIdOrderByDataDesc(medicamentoId);
+        }
+        return ResponseEntity.ok(lista);
     }
 }

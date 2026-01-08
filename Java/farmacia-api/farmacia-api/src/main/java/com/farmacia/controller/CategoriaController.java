@@ -38,4 +38,17 @@ public class CategoriaController {
     public Categoria buscar(@PathVariable Long id) {
         return service.buscarPorId(id);
     }
+
+    @Operation(summary = "Atualizar categoria", description = "Atualiza as informações de uma categoria existente pelo ID.")
+    @PutMapping("/{id}")
+    public Categoria atualizar(@PathVariable Long id, @Valid @RequestBody Categoria categoria) {
+        return service.atualizar(id, categoria);
+    }
+
+    @Operation(summary = "Deletar categoria", description = "Remove uma categoria do sistema pelo ID.")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        service.deletar(id);
+        return ResponseEntity.noContent().build();
+    }
 }

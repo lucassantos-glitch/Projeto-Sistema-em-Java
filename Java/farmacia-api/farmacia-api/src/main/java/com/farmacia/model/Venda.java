@@ -10,6 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.PrePersist;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +20,12 @@ import lombok.Setter;
 @Getter @Setter
 public class Venda {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+    @Column(nullable = false)
     private LocalDateTime data;
 
     @OneToMany(cascade = CascadeType.ALL)
@@ -31,9 +38,12 @@ public class Venda {
     @ManyToOne
     private Cliente cliente;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @PrePersist
+    protected void preencherDataSeVazia() {
+        if (this.data == null) {
+            this.data = LocalDateTime.now();
+        }
+    }
 
     public BigDecimal getTotal() {
     return total;
